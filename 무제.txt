@@ -1,0 +1,31 @@
+cd /Users/gimnahun/Desktop/0201796449_sc/chapter5
+
+java Register
+
+java Message 8000
+
+java Customer 10
+
+
+
+javac Register.java
+
+javac Message.java
+
+javac Customer.java
+
+javac EchoServerThread.java
+
+
+
+127.0.0.1
+
+7
+
+
+javac EchoClientHelper2.java
+javac EchoClientHelper22.java
+
+
+java DaytimeClient1 
+java DaytimeServer1 13
