@@ -1,43 +1,44 @@
 import java.net.*;
 import java.io.*;
 
-/**
- * This class is a module which provides the application logic
- * for an Echo client using stream-mode socket.
- * @author M. L. Liu
- */
-
 public class EchoClientHelper2 {
+    static final String endMessage = ".";
+    private MyStreamSocket mySocket;
+    private InetAddress serverHost;
+    private int serverPort;
+    private Thread receiveThread;
 
-   static final String endMessage = ".";
-   private MyStreamSocket mySocket;
-   private InetAddress serverHost;
-   private int serverPort;
+    EchoClientHelper2(String hostName, String portNum) throws SocketException, UnknownHostException, IOException {
+        this.serverHost = InetAddress.getByName(hostName);
+        this.serverPort = Integer.parseInt(portNum);
+        this.mySocket = new MyStreamSocket(this.serverHost, this.serverPort);
 
-   EchoClientHelper2(String hostName,
-                     String portNum) throws SocketException,
-                     UnknownHostException, IOException {
-                                     
-  	   this.serverHost = InetAddress.getByName(hostName);
-  		this.serverPort = Integer.parseInt(portNum);
-      //Instantiates a stream-mode socket and wait for a connection.
-   	this.mySocket = new MyStreamSocket(this.serverHost,
-         this.serverPort); 
-/**/  System.out.println("Connection request made");
-   } // end constructor
-	
-   public String getEcho( String message) throws SocketException,
-      IOException{     
-      String echo = "";    
-      mySocket.sendMessage( message);
-	   // now receive the echo
-      echo = mySocket.receiveMessage();
-      return echo;
-   } // end getEcho
+        System.out.println("Connection request made");
 
-   public void done( ) throws SocketException,
-                              IOException{
-      mySocket.sendMessage(endMessage);
-      mySocket.close( );
-   } // end done 
-} //end class
+        // Create and start a new thread that listens for incoming messages
+        this.receiveThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String receivedMessage;
+                    while ((receivedMessage = mySocket.receiveMessage()) != null && !receivedMessage.equals(endMessage)) {
+                        System.out.println(receivedMessage);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error in receive thread: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        receiveThread.start();
+    }
+
+    public void sendEcho( String message) throws SocketException, IOException {
+        mySocket.sendMessage(message);
+      
+    }
+
+    public void done() throws SocketException, IOException {
+        mySocket.sendMessage(endMessage);
+    }
+}

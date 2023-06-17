@@ -4,8 +4,11 @@ java Register
 
 java Message 8000
 
-java Customer 10
+java Customer 2010
 
+java Customer 2020
+
+java Game 3000
 
 
 javac Register.java
@@ -15,6 +18,10 @@ javac Message.java
 javac Customer.java
 
 javac EchoServerThread.java
+
+javac Game.java
+
+javac EchoClientHelper2.java
 
 
 

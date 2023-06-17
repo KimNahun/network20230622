@@ -55,7 +55,6 @@ if (arr.length >= 3) {
 
 }
                 // send back the server info requested by the customer
-System.out.println(message+"sdds");
                 if (serverMap.containsKey(message.trim())) {
                     ServerInfo serverInfo = serverMap.get(message.trim());
                     String serverDetails = serverInfo.getHostName() + "\n" + serverInfo.getPort();

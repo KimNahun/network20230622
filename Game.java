@@ -1,14 +1,13 @@
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.util.*;
 
-public class Message {
+public class Game {
 
 	static final String endMessage = ".";
-	static String messageName= "";
-	static String messageportNum= "";
-	static String messagehostName= "";   
+	static String gameName= "";
+	static String gameportNum= "";
+	static String gamehostName= "";   
 	public static void main(String[] args) {
 		InputStreamReader is = new InputStreamReader(System.in);
 		BufferedReader br = new BufferedReader(is);
@@ -28,14 +27,14 @@ public class Message {
 			String message, echo;
 
 			System.out.println("Write your Servername");   
-			messageName = br.readLine();
+			gameName = br.readLine();
 			System.out.println("Write your hostName");
-			messagehostName = br.readLine();
+			gamehostName = br.readLine();
 			System.out.println("Write your portNum");   
-			messageportNum = br.readLine();
+			gameportNum = br.readLine();
 
 
-			String serverInfo = messageName + " " + messagehostName + " " + messageportNum;
+			String serverInfo = gameName + " " + gamehostName + " " + gameportNum;
 			echo = helper.getEcho(serverInfo);
 
 			System.out.println("1: if you want perform your task's duties \n  if you want yo exit, press 0");
@@ -53,7 +52,7 @@ public class Message {
 								(myConnectionSocket.accept());
 						System.out.println("connection accepted");
 
-						EchoServerThread myServerRunnable = new EchoServerThread(myDataSocket, 1);  
+						EchoServerThread myServerRunnable = new EchoServerThread(myDataSocket, 2);  
 Thread myServerThread = new Thread(myServerRunnable);
 myServerThread.start();
 

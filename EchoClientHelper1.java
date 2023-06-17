@@ -28,6 +28,11 @@ public class EchoClientHelper1 {
       echo = mySocket.receiveMessage();
       return echo;
    } //end getEcho
+	 public void sendEcho(String message)
+            throws SocketException, IOException {
+        mySocket.sendMessage(serverHost, serverPort, message);
+        // no need to receive the echo
+    } // end sendEcho
 
    public void done( ) throws SocketException {
       mySocket.close( );
