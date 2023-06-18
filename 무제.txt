@@ -19,9 +19,15 @@ javac Customer.java
 
 javac EchoServerThread.java
 
+javac MessageHelper.java
+
 javac Game.java
 
+javac GameHelper.java
+
 javac EchoClientHelper2.java
+
+
 
 
 

@@ -4,20 +4,20 @@ import java.util.*;
 
 
 
+
 class EchoServerThread implements Runnable {
 
 	static ArrayList<String[]> messageList = new ArrayList<>();
 	static ArrayList<String> nameOrder=new ArrayList<>();
 
 	static ArrayList<String> wordList=new ArrayList<>();
+
 	static final String endMessage = ".";
 
-
-	private static Map<String, MyStreamSocket> clientSockets = new HashMap<>();
+	static Map<String, MyStreamSocket> clientSockets = new HashMap<>();
 	BufferedReader br=new BufferedReader(new InputStreamReader(System.in));
 	MyStreamSocket myDataSocket;
 	int mode;  // New variable to store the mode
-
 
 	EchoServerThread(MyStreamSocket myDataSocket,int mode) {
 		this.myDataSocket = myDataSocket;
@@ -25,118 +25,105 @@ class EchoServerThread implements Runnable {
 	}
 
 	public void run()  { 
-
-		if(mode==1) {
-			messageMode();
-		}
-		else if(mode==2) {
-			gameMode();
-		}
-
-
-
-
-
-
-	}
-
-	public void gameMode() {
-		boolean done = false;
-		String message;
-
 		try {
-			while (!done) {
-				message = myDataSocket.receiveMessage();
-				String temp[]= message.split(";:;");
-				//대문자 소문자 구별
-				//여기서 스토리 텔링. camel case 써서 했는데 계속 리퀘스트 모드해결안됨
-				String userWord= temp[0].toLowerCase();
-				String userName = temp[1];
-				String time = temp[2];
-
-				clientSockets.put(userName, myDataSocket);
-				if(userWord.equals("/requestmode/"))
-					continue;
-
-				System.out.println(userName +": "+ userWord);
-
-
-				if ((userWord.trim()).equals (endMessage)){
-
-					System.out.println("Session over.");
-
-					done = true;
-				}
-
-				if(wordList.isEmpty()) {
-					wordList.add(userWord);
-					nameOrder.add(userName);
-				}
-
-				//게임 종료 조건. 이미 말한 단어를 말하거나, 1글자 단어거나, 전의 마지막 단어의 끝 글자가 아니라면
-				else if(wordList.contains(userWord)||userWord.length()<2|| userWord.charAt(0) != wordList.get(wordList.size()-1).charAt(wordList.get(wordList.size()-1).length()-1)) {
-
-					for(String info:clientSockets.keySet()) {
-						if(info!=userName)
-							clientSockets.get(info).sendMessage(userName+" : "+userWord);
-					}
-
-					for (String otherUser : clientSockets.keySet()) {
-						if (!otherUser.equals(userName)) {
-							clientSockets.get(otherUser).sendMessage(userName+" lose");
-						}
-					}
-					clientSockets.get(userName).sendMessage("You lose");
-					//					
-					wordList.clear();
-					nameOrder.clear();
-					System.out.println(userName +" lose ");
-
-					System.out.println("---new Game Start. -----");
-				}
-				else {
-					nameOrder.add(userName);
-					wordList.add(userWord);
-					for(String info:clientSockets.keySet()) {
-						if(!info.equals(userName))
-							clientSockets.get(info).sendMessage(userName+" : "+userWord);
-					}
-
-				} 
+			//만약 모드가 1이면 메시지를 주고받는 기능
+			if(mode==1) {
+				messageMode();
+			}
+			//만약 모드가 2이면 게임을 하는 기능
+			else if(mode==2) {
+				gameMode();
 			}
 		}
-
-		catch (Exception ex) {
-			System.out.println("Exception caught in thread: " + ex);
+		catch (IOException e) {
+			e.printStackTrace();
 		}
+
 
 	}
 
+	public void gameMode() throws IOException {
+		
+		
+
+		GameHelper gameHelper = new GameHelper(nameOrder,wordList,clientSockets,myDataSocket);
+		boolean done = false;
+		String message;
+		
+		int gameNumber = gameHelper.checkAllGameSame();
+
+		try {
+			//게임 number에 따라서 각각 다른 게임을 진행
+			//아직 게임이 하나니까, 1,2,3 모두 wordgame 수행
+			switch(gameNumber) {
+			case 1:gameHelper.wordGame(); break;
+			case 2:gameHelper.wordGame(); break;
+			case 3:gameHelper.wordGame(); break;
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
+	}
+
+	//메시지를 주고받는 기능
 	public void messageMode(){
 		boolean done = false;
+		MessageHelper messageHelper = new MessageHelper(messageList,clientSockets);
 		String message;
 		try {
 			while (!done) {
+				//계속해서 메시지를 받음.
 				message = myDataSocket.receiveMessage();
+				//구분자 ;:; 를 기준으로 나누었음. 메시지에 띄어쓰기가 있을 수 있기 때문.
+				
 				String temp[] = message.split(";:;");
+				//유저 메시지, 유저 이름, 보낸 시간. 호스트네임, 포트번호
 				String userMessage = temp[0].trim();
 				String userName = temp[1];
 				String sendTimestamp=temp[2];
-
-				clientSockets.put(userName, myDataSocket);
+				String sendHostName = temp[3];
+				String sendPortNum = temp[4];
+				//사용자의 메시지가 'requestMode'면, 서버에 내 소켓을 등록
+				//HashMap 으로 했고, key는 이름 ,value는 소켓
 				if(userMessage.equals("/requestMode/")) {
-
-					System.out.println(" ["+userName+"] 이 채팅방에 입장하셨습니다. "+sendTimestamp);
+					
+					//그 닉네임이 존재하지 않는 닉네임이라면
+					if(!clientSockets.containsKey(userName)) {
+						//채팅방에 입장했다고 출력.
+						System.out.println(" ["+userName+"] 이 채팅방에 입장하셨습니다. "+sendTimestamp);
+						System.out.println("host name : " + sendHostName +" port number : " + sendPortNum);
+						//해시맵에 저장
+						clientSockets.put(userName, myDataSocket);
+						//성공적으로 채팅방에 입장하였다고 클라이언트에게 보냄
+						myDataSocket.sendMessage("성공적으로 채팅방에 입장하였습니다.");
+						
+					}
+					//이미 존재하는 닉네임이라면
+					else {
+						//이미 존재하는 닉네임이라고 클라이언트에게 보냄
+						myDataSocket.sendMessage("/duplicated/ 해당 이름 " + userName+" 는 이미 존재하는 이름입니다.");
+						
+					}
+					
 					continue;
+					
+					
 				}
-
+				//사용자가 "//1"을 입력하면 모든 메시지를 보여줌
 				if (userMessage.equals("//1")) {
-					showAllMessage(userName);
+					messageHelper.showAllMessage(userName);
 				}
+				//사용자가 "//2"를 입력하면, 어떤 사용자가 있는지 보여줌
 				else if (userMessage.equals("//2")) {
-					showAllCustomer(userName);
+					messageHelper.showAllCustomer(userName);
 				}
-				else if(userMessage.startsWith("//3")) { //이거 검색기능 띄어쓰기 제공 안함.
+				//사용자가 "//3"을 입력하면, 해당 메시지를 검색함.   
+				//입력 양식 :    //3 hello hi
+				// --- > "hello hi" 가 보냈던 메시지에 있는지 검색
+				else if(userMessage.startsWith("//3")) { 
 					String tempArray [] = userMessage.split(" ");
 					String searchMessage = "";
 					for(int i=1;i<tempArray.length;i++) {
@@ -144,8 +131,11 @@ class EchoServerThread implements Runnable {
 					}
 					searchMessage=searchMessage.trim();
 
-					searchMessage(userName,searchMessage);
+					messageHelper.searchMessage(userName,searchMessage);
 				}
+				//사용자가 "//4"를 입력하면, 특정 사용자에게만 메시지를 보냄
+				//입력 양식 :     //4 Leon how are you ?
+				// ---> Leon 유저에게 "how are you?" 메시지를 보냄
 				else if(userMessage.startsWith("//4")) {
 
 					String tempArray [] = userMessage.split(" ");
@@ -156,11 +146,14 @@ class EchoServerThread implements Runnable {
 					}
 					sendMessage=sendMessage.trim();
 
-
-					sendPrivateMessage(userName,sendUser,sendMessage,sendTimestamp);
-
+					messageHelper.sendPrivateMessage(userName,sendUser,sendMessage,sendTimestamp); 
 
 				}
+				//사용자가 "//5"를 입력하면, 특정 메시지를 지움.
+				//입력 양식 :    //5 abc     or    //5 .
+				// ---> 해당 사용자가 입력했던 채팅 중에서 "abc" 와 정확히 일치하는 채팅을 지움
+				// ---> .을 치면 해당 사용자가 입력한 모든 메시지를 지움
+				
 				else if(userMessage.startsWith("//5")) {
 
 					String tempArray [] = userMessage.split(" ");
@@ -170,19 +163,22 @@ class EchoServerThread implements Runnable {
 					}
 					deleteWord=deleteWord.trim();
 
-					deleteMessage(userName,deleteWord);
+					messageHelper.deleteMessage(userName,deleteWord);
 
 				}
 
+				//.을 치면, 대화방에서 나감.
+				//나갔다고 출력해줌.
 				else if (userMessage.equals(endMessage)) {
 					clientSockets.remove(userName);
 					System.out.println("["+userName+"] left this room");
 				}
+				//이외의 경우는 명령어가 아닌 것. 
+				//해시맵에 등록된 다른 모든 사용자들에게, 메시지를 보냄( 나 자신은 제외)
+				//그리고 내가 보낸 메시지를 리스트에 저장함. 어떤 메시지인지, 누가 보냈는지, 몇시에 보냈는지.
 				else {
-
 					messageList.add(new String[]{userMessage,userName,sendTimestamp});
 					System.out.println(userName+": " + userMessage+" "+sendTimestamp);
-
 					for (String otherUser : clientSockets.keySet()) {
 						if (!otherUser.equals(userName)) {
 							clientSockets.get(otherUser).sendMessage(userName + ": " + userMessage+" "+sendTimestamp);
@@ -196,143 +192,5 @@ class EchoServerThread implements Runnable {
 		}
 
 	}
-	public void showAllMessage(String userName) throws IOException {
-		StringBuilder sb=new StringBuilder();
-		sb.append("----------\n");
-		sb.append("Show all Message\n");
-		sb.append("\n");
-		for(int i=0;i<messageList.size();i++){
-			sb.append(messageList.get(i)[1]+":  "+messageList.get(i)[0]+
-					" "+messageList.get(i)[2]+"\n");
-		}
-		sb.append("\n");
-		sb.append("----------");
 
-		clientSockets.get(userName).sendMessage(sb.toString());
-
-
-	}
-	public void showAllCustomer(String userName) throws IOException{
-		StringBuilder sb=new StringBuilder();
-		sb.append("----------\n");
-		sb.append("Show all Customer\n");
-		sb.append("현재 사용자는 "+clientSockets.size()+"명 있습니다.\n");
-		sb.append("\n");
-		int idx = 0;
-		sb.append("[ ");
-		for(String name:clientSockets.keySet()) {
-			sb.append(name);
-			if(idx++!=clientSockets.size()-1)
-				sb.append(",");
-
-		}
-		sb.append(" ]");
-
-		sb.append("\n");
-		sb.append("----------");
-
-		clientSockets.get(userName).sendMessage(sb.toString());
-
-
-	}
-	public void searchMessage(String userName,String searchingWord)throws IOException {
-		StringBuilder sb=new StringBuilder();
-		sb.append("----------\n");
-		sb.append("Searches for the presence of a specific word : \"" +searchingWord+"\"");
-		sb.append("\n");
-		boolean find = false;
-		for(int i=0;i<messageList.size();i++) {
-			if(messageList.get(i)[0].contains(searchingWord)) {
-				sb.append(messageList.get(i)[1]+": "+messageList.get(i)[0]+" "+messageList.get(i)[2]+"\n");
-				find = true;
-			}
-		}
-		if(!find)
-			sb.append("The word \""+searchingWord+"\" doesn't exist");
-
-		sb.append("\n");
-		sb.append("----------");
-
-
-
-		clientSockets.get(userName).sendMessage(sb.toString());
-
-
-	}
-	public void sendPrivateMessage(String userName,String sendUser,String sendMessage,String sendTimeStamp) throws IOException{
-		//if(!clientSockets.contains(sendUser))
-		StringBuilder sb=new StringBuilder();
-		boolean exist = true;
-		sb.append("----------\n");
-		sb.append("Send Private Message to ["+sendUser+"]");
-		sb.append("\n");
-
-		if(!clientSockets.containsKey(sendUser)) {
-			exist = false;
-		}
-		if(!exist) {
-			sb.append("The user ["+sendUser+"] doesn't exit");
-		}
-		else {
-			sb.append("You send a message to ["+sendUser+"] successfully");
-		}
-
-		sb.append("\n");
-		sb.append("----------");
-
-		clientSockets.get(userName).sendMessage(sb.toString());
-
-		if(clientSockets.containsKey(sendUser)) {
-
-			clientSockets.get(sendUser).sendMessage("User ["+userName+"] send you a private message :"
-					+sendMessage+" "+sendTimeStamp+"\n");
-
-		}
-
-
-	}
-	public void deleteMessage(String userName,String deleteWord) throws IOException{
-
-		StringBuilder sb=new StringBuilder();
-		sb.append("----------\n");
-		if(!deleteWord.equals("."))
-			sb.append("delete Message ["+deleteWord+"]");
-		else
-			sb.append("delete All Message ");
-		sb.append("\n");
-
-		boolean find = false;
-		int index=0;
-		int count=0;
-		while(index!=messageList.size()) {
-
-			if(messageList.get(index)[1].equals(userName)&&(messageList.get(index)[0].equals(deleteWord)||deleteWord.equals("."))) {
-				sb.append(messageList.get(index)[1]+": "+messageList.get(index)[0]+" "+messageList.get(index)[2]+"\n");
-				messageList.remove(index);
-				find = true;
-				index--;
-				count++;
-			}
-
-			index++;
-
-
-		}
-
-		if(!find&&!deleteWord.equals("."))
-			sb.append("The word \""+deleteWord+"\" doesn't exist");
-		else if(find&&!deleteWord.equals("."))
-			sb.append("You delete \""+deleteWord+"\" successfully. total "+count+" removed");
-		else if(!find&&deleteWord.equals("."))
-			sb.append("You didn't send any message here");
-		else
-			sb.append("You removed all message successfully that you sent. total "+count+" removed");
-
-		sb.append("\n");
-		sb.append("----------");
-
-
-		clientSockets.get(userName).sendMessage(sb.toString());
-
-	}
 } 
