@@ -2,9 +2,6 @@
 import java.io.*;
 import java.util.*;
 
-
-
-
 class EchoServerThread implements Runnable {
 
 	static ArrayList<String[]> messageList = new ArrayList<>();
@@ -12,7 +9,9 @@ class EchoServerThread implements Runnable {
 
 	static ArrayList<String> wordList=new ArrayList<>();
 
+
 	static final String endMessage = ".";
+	static int count = 0;
 
 	static Map<String, MyStreamSocket> clientSockets = new HashMap<>();
 	BufferedReader br=new BufferedReader(new InputStreamReader(System.in));
@@ -26,14 +25,22 @@ class EchoServerThread implements Runnable {
 
 	public void run()  { 
 		try {
+
+			
 			//만약 모드가 1이면 메시지를 주고받는 기능
 			if(mode==1) {
 				messageMode();
 			}
+
 			//만약 모드가 2이면 게임을 하는 기능
-			else if(mode==2) {
+			else if(mode==2) {	
 				gameMode();
 			}
+
+
+
+
+
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -42,31 +49,86 @@ class EchoServerThread implements Runnable {
 
 	}
 
-	public void gameMode() throws IOException {
+	 public void gameMode() throws IOException {
+
+
+		String message="";
+		
+		
+		
+		
+		while(true) {
+			
+			message = myDataSocket.receiveMessage();
+			
+			String temp[] = message.split(";:;");
+			String userMessage = temp[0].trim();
+			String userName = temp[1];
+			String sendTimestamp=temp[2];
+			String sendHostName =temp[3];
+			String sendPortNum = temp[4];
+
+			if(userMessage.equals("/requestMode/")) {	
+				//그 닉네임이 존재하지 않는 닉네임이라면
+				if(!clientSockets.containsKey(userName)) {
+					//채팅방에 입장했다고 출력.
+					System.out.println(" ["+userName+"] enter the game server "+sendTimestamp);
+					System.out.println("host name : " + sendHostName +" port number : " + sendPortNum);
+					//해시맵에 저장
+					clientSockets.put(userName, myDataSocket);
+					//성공적으로 채팅방에 입장하였다고 클라이언트에게 보냄
+					myDataSocket.sendMessage("You connected successfully");
+					break;
+				}
+				//이미 존재하는 닉네임이라면
+				else {
+					//이미 존재하는 닉네임이라고 클라이언트에게 보냄
+					myDataSocket.sendMessage("/duplicated/ The name " + userName+" already exist");
+					
+				}
+
+			}
+
+
+		}
+		
+		if(clientSockets.size()==1) return;
+		
+		
 		
 		
 
-		GameHelper gameHelper = new GameHelper(nameOrder,wordList,clientSockets,myDataSocket);
-		boolean done = false;
-		String message;
+		myDataSocket.sendMessage("choose the game number 1 : rockScissorsPaper, 2: wordGame, 3 : blockGame");
+		message=myDataSocket.receiveMessage();
 		
-		int gameNumber = gameHelper.checkAllGameSame();
+		String temp [] =message.split(";:;");
+		
+		int gameNumber = Integer.parseInt(temp[0]);
+
+
 
 		try {
 			//게임 number에 따라서 각각 다른 게임을 진행
 			//아직 게임이 하나니까, 1,2,3 모두 wordgame 수행
+			GameHelper gameHelper = new GameHelper(nameOrder,wordList,clientSockets);
 			switch(gameNumber) {
-			case 1:gameHelper.wordGame(); break;
-			case 2:gameHelper.wordGame(); break;
-			case 3:gameHelper.wordGame(); break;
+			case 1:
+				gameHelper.rockScissorsPaper();
+				break;
+			case 2: 
+				gameHelper.wordGame();
+				break;
+			case 3:
+				gameHelper.blockGame();
+				break;
 			}
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-
 	}
+
 
 	//메시지를 주고받는 기능
 	public void messageMode(){
@@ -89,7 +151,6 @@ class EchoServerThread implements Runnable {
 				//사용자의 메시지가 'requestMode'면, 서버에 내 소켓을 등록
 				//HashMap 으로 했고, key는 이름 ,value는 소켓
 				if(userMessage.equals("/requestMode/")) {
-					
 					//그 닉네임이 존재하지 않는 닉네임이라면
 					if(!clientSockets.containsKey(userName)) {
 						//채팅방에 입장했다고 출력.
@@ -99,18 +160,18 @@ class EchoServerThread implements Runnable {
 						clientSockets.put(userName, myDataSocket);
 						//성공적으로 채팅방에 입장하였다고 클라이언트에게 보냄
 						myDataSocket.sendMessage("성공적으로 채팅방에 입장하였습니다.");
-						
+
 					}
 					//이미 존재하는 닉네임이라면
 					else {
 						//이미 존재하는 닉네임이라고 클라이언트에게 보냄
 						myDataSocket.sendMessage("/duplicated/ 해당 이름 " + userName+" 는 이미 존재하는 이름입니다.");
-						
+
 					}
-					
+
 					continue;
-					
-					
+
+
 				}
 				//사용자가 "//1"을 입력하면 모든 메시지를 보여줌
 				if (userMessage.equals("//1")) {
@@ -153,7 +214,7 @@ class EchoServerThread implements Runnable {
 				//입력 양식 :    //5 abc     or    //5 .
 				// ---> 해당 사용자가 입력했던 채팅 중에서 "abc" 와 정확히 일치하는 채팅을 지움
 				// ---> .을 치면 해당 사용자가 입력한 모든 메시지를 지움
-				
+
 				else if(userMessage.startsWith("//5")) {
 
 					String tempArray [] = userMessage.split(" ");

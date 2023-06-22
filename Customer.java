@@ -6,7 +6,6 @@ import java.time.LocalTime;
 public class Customer {
 	
 	
-	
 	static final String endMessage = ".";
 
 	public static void main(String[] args) {
@@ -33,7 +32,6 @@ public class Customer {
 				//해당 서버가 존재하는지 확인
 				if(num == 1) {
 					System.out.println("What server do you want?");
-
 					String serverName = br.readLine();
 					String serverInfo = helper.getEcho(serverName); // 
 					System.out.println("Server Info: " + serverInfo);
@@ -61,13 +59,14 @@ public class Customer {
 						myName = br.readLine();
 						nowTime = ""+now.getHour()+":"+now.getMinute()+":"+now.getSecond();
 						//helper에 닉네임, 현재 시간, host name, 포트 넘버를 보냄
-					    helper2.sendEcho("/requestMode/"+";:;"+myName+";:;"+nowTime+";:;"+initialHostName+";:;"+portNum);
+					    helper2.sendEcho("/requestMode/"+";:;"+myName+";:;"+nowTime+";:;"+initialHostName+";:;"+args[0]);
 					    //1초 지연. 이게 없으면 check.check가 false 로 바뀌기 전에 What is your name을 다시 물어봄.
 					    try {
 					        Thread.sleep(1000);  
 					    } catch (InterruptedException e) {
 					        e.printStackTrace();
 					    }
+					    
 					}
 					
 					//여기서부터는 서버에 성공적으로 접속한 것.

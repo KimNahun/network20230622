@@ -1,3 +1,6 @@
+
+
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.util.*;
@@ -11,6 +14,7 @@ public class Game {
 	public static void main(String[] args) {
 		InputStreamReader is = new InputStreamReader(System.in);
 		BufferedReader br = new BufferedReader(is);
+
 		try {
 			System.out.println("Welcome to the Echo client.\n" +
 					"What is the name of the server host?");
@@ -52,9 +56,12 @@ public class Game {
 								(myConnectionSocket.accept());
 						System.out.println("connection accepted");
 
-						EchoServerThread myServerRunnable = new EchoServerThread(myDataSocket, 2);  
-Thread myServerThread = new Thread(myServerRunnable);
-myServerThread.start();
+						EchoServerThread myServerRunnable = new EchoServerThread(myDataSocket, 2);
+						
+						
+						
+						Thread myServerThread = new Thread(myServerRunnable);
+						myServerThread.start();
 
 					} 
 				} 

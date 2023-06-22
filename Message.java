@@ -9,6 +9,7 @@ public class Message {
 	static String messageName= "";
 	static String messageportNum= "";
 	static String messagehostName= "";   
+	
 	public static void main(String[] args) {
 		InputStreamReader is = new InputStreamReader(System.in);
 		BufferedReader br = new BufferedReader(is);
@@ -53,9 +54,11 @@ public class Message {
 								(myConnectionSocket.accept());
 						System.out.println("connection accepted");
 
-						EchoServerThread myServerRunnable = new EchoServerThread(myDataSocket, 1);  
-Thread myServerThread = new Thread(myServerRunnable);
-myServerThread.start();
+						EchoServerThread myServerRunnable = new EchoServerThread(myDataSocket, 1);
+					
+						
+						Thread myServerThread = new Thread(myServerRunnable);
+						myServerThread.start();
 
 					} 
 				} 
