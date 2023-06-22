@@ -55,8 +55,7 @@ class EchoServerThread implements Runnable {
 		String message="";
 		
 		
-		
-		
+		//계속해서 요청이 오는 사용자를 체크함.
 		while(true) {
 			
 			message = myDataSocket.receiveMessage();
@@ -67,7 +66,7 @@ class EchoServerThread implements Runnable {
 			String sendTimestamp=temp[2];
 			String sendHostName =temp[3];
 			String sendPortNum = temp[4];
-
+			
 			if(userMessage.equals("/requestMode/")) {	
 				//그 닉네임이 존재하지 않는 닉네임이라면
 				if(!clientSockets.containsKey(userName)) {
@@ -91,25 +90,25 @@ class EchoServerThread implements Runnable {
 
 
 		}
-		
+		//이때는 아직 사용자가 1명만 들어온 것. 리턴함
+		//즉, 사용자가 2명이 되어야 게임이 시작함.
 		if(clientSockets.size()==1) return;
 		
 		
 		
 		
-
-		myDataSocket.sendMessage("choose the game number 1 : rockScissorsPaper, 2: wordGame, 3 : blockGame");
+		//게임의 종류 선택, 1번은 가위바위보, 2번은 끝말잇기, 3번은 2048게임
+		myDataSocket.sendMessage("choose the game number (1 : rockScissorsPaper, 2: wordGame, 3 : blockGame)");
 		message=myDataSocket.receiveMessage();
 		
 		String temp [] =message.split(";:;");
-		
+		//게임 넘버를 받음.
 		int gameNumber = Integer.parseInt(temp[0]);
 
 
 
 		try {
 			//게임 number에 따라서 각각 다른 게임을 진행
-			//아직 게임이 하나니까, 1,2,3 모두 wordgame 수행
 			GameHelper gameHelper = new GameHelper(nameOrder,wordList,clientSockets);
 			switch(gameNumber) {
 			case 1:

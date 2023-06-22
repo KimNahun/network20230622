@@ -11,6 +11,7 @@ public class GameHelper {
 	static HashMap<String,Integer> userScore=new HashMap<>();
 
 
+	//게임 헬퍼의 생성자.
 	GameHelper(ArrayList<String> nameOrder,ArrayList<String> wordList,Map<String,MyStreamSocket> clientSockets){
 		this.nameOrder=nameOrder;
 		this.wordList=wordList;
@@ -38,7 +39,7 @@ public class GameHelper {
 
 		int mod = 0;
 		while(!done) {
-
+			
 			try { //
 
 				if(mod==0) {
@@ -155,6 +156,12 @@ public class GameHelper {
 			order[0].sendMessage("You lose");
 			order[1].sendMessage("You win");
 		}
+		
+		for(String name:clientSockets.keySet()) {
+			clientSockets.get(name).sendMessage("program exit");
+		}
+		clientSockets.clear();
+		
 
 
 
@@ -190,6 +197,7 @@ public class GameHelper {
 			userScore.put(now,0);
 		}
 
+		//2명이서 합쳐서 10턴간 진행
 		int count = 10;
 
 		while(count-->0) {
@@ -229,21 +237,29 @@ public class GameHelper {
 			String direction = temp[0];
 			String userName = temp[1];
 			direction = direction.toLowerCase();
+			//위로 이동
 			if(temp[0].equals("w")) {
 				map=up(map,userName);
 			}
-
+			//아래로 이동
 			else if(temp[0].equals("s")) {
 				map=down(map,userName);
 			}
-
+			//왼쪽으로 이동
 			else if(temp[0].equals("a")) {
 				map=left(map,userName);
 			}
-
+			//오른쪽으로 이동
 			else if(temp[0].equals("d")) {
 				map=right(map,userName);
 			}
+			else if(temp[0].equals(endMessage)) {
+				System.out.println(userName +" exit this room");
+				clientSockets.remove(userName);
+				
+			}
+			
+			
 			sb=new StringBuilder();
 			for(int i=0;i<map.length;i++) {
 				for(int j=0;j<map.length;j++) {
@@ -302,10 +318,12 @@ public class GameHelper {
 		}
 		order[0].sendMessage(sb.toString());
 		order[1].sendMessage(sb.toString());
+	
 
 
 
 	}
+	//왼쪽 방향으로 이동.
 	public static int [][] left(int map[][],String name) {
 
 
@@ -356,6 +374,7 @@ public class GameHelper {
 
 		return mapping;
 	}
+	//오른쪽 방향으로 이동.
 	public static int[][] right(int map[][],String name) {
 
 
@@ -405,6 +424,7 @@ public class GameHelper {
 		return mapping;
 	}
 
+	//위 방향으로 이동
 	public static int[][] up(int map[][],String name) {
 
 		int standard=0;
@@ -452,6 +472,7 @@ public class GameHelper {
 
 		return mapping;
 	}
+	//아래 방향으로 이동.
 	public static int[][] down(int map[][],String name) {
 
 
